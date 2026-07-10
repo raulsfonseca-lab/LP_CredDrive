@@ -1,96 +1,67 @@
-// Configuração WhatsApp: substitua pelo WhatsApp comercial da CredDrive no formato DDI + DDD + número.
-// Exemplo: const WHATSAPP_NUMBER = "5531999999999";
-const WHATSAPP_NUMBER = "5500000000000";
+const WHATSAPP_NUMBER = "5531983318101";
 const WHATSAPP_MESSAGE = "Olá, vim pelo site da CredDrive e quero simular um empréstimo com garantia de veículo.";
+const WEBHOOK_URL = ""; // Inserir URL real do webhook/CRM quando disponível.
 
-// Configuração Webhook/CRM: substitua por URL de webhook/CRM, como Make, Zapier, RD Station ou CRM próprio.
-// Enquanto vazio, o formulário exibirá uma mensagem de sucesso local e orientará o usuário a falar pelo WhatsApp.
-const WEBHOOK_URL = "";
-
-function buildWhatsAppUrl() {
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+function whatsappUrl() {
+  const base = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : "https://wa.me/";
+  return `${base}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 }
 
-function trackEvent(eventName, payload = {}) {
+function trackEvent(name, params = {}) {
   window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({ event: eventName, ...payload });
-
+  window.dataLayer.push({ event: name, ...params });
   if (typeof window.fbq === "function") {
-    window.fbq("trackCustom", eventName, payload);
+    window.fbq("trackCustom", name, params);
   }
 }
 
-function showFormStatus(message) {
-  const existing = document.querySelector(".form-status");
-  if (existing) existing.remove();
+document.querySelectorAll(".whatsapp-link").forEach((link) => {
+  link.setAttribute("href", whatsappUrl());
+  link.setAttribute("target", "_blank");
+  link.setAttribute("rel", "noopener noreferrer");
+  link.addEventListener("click", () => trackEvent("whatsapp_click", { source: "landing_page" }));
+});
 
-  const status = document.createElement("p");
-  status.className = "form-status";
-  status.textContent = message;
-  document.getElementById("leadForm")?.appendChild(status);
+document.querySelectorAll(".track-cta").forEach((link) => {
+  link.addEventListener("click", () => trackEvent("main_cta_click", { source: "landing_page" }));
+});
+
+const menuToggle = document.querySelector(".menu-toggle");
+const navMenu = document.querySelector(".nav-menu");
+if (menuToggle && navMenu) {
+  menuToggle.addEventListener("click", () => navMenu.classList.toggle("is-open"));
+  navMenu.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => navMenu.classList.remove("is-open")));
 }
 
-document.querySelectorAll("#whatsappHero, [data-whatsapp]").forEach((link) => {
-  link.setAttribute("href", buildWhatsAppUrl());
-  link.setAttribute("target", "_blank");
-  link.setAttribute("rel", "noopener");
-  link.addEventListener("click", () => trackEvent("whatsapp_click", { origem: "Landing Page CredDrive" }));
-});
-
-document.querySelectorAll('a[href="#formulario"]').forEach((link) => {
-  link.addEventListener("click", () => trackEvent("cta_principal_click", { origem: "Landing Page CredDrive" }));
-});
-
-const form = document.getElementById("leadForm");
-
+const form = document.querySelector("#leadForm");
+const feedback = document.querySelector("#formFeedback");
 if (form) {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+    payload.dataHoraEnvio = new Date().toISOString();
+    payload.origem = window.location.href;
 
-    if (!form.checkValidity()) {
-      form.reportValidity();
+    trackEvent("lead_form_submit", { source: "landing_page" });
+
+    if (!WEBHOOK_URL) {
+      feedback.textContent = "Recebemos sua solicitação. Para agilizar, fale também com um consultor pelo WhatsApp.";
+      form.reset();
       return;
     }
 
-    const data = Object.fromEntries(new FormData(form).entries());
-    data.origem = "Landing Page CredDrive";
-    data.pagina = window.location.href;
-    data.enviadoEm = new Date().toISOString();
-
-    trackEvent("lead_form_submit", data);
-
-    const button = form.querySelector("button[type='submit']");
-    const originalText = button.textContent;
-    button.disabled = true;
-    button.textContent = "Enviando...";
-
-    if (WEBHOOK_URL) {
-      try {
-        const response = await fetch(WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Webhook retornou status ${response.status}`);
-        }
-
-        showFormStatus("Simulação recebida! Um consultor da CredDrive entrará em contato em breve.");
-      } catch (error) {
-        console.error("Erro ao enviar lead para webhook/CRM:", error);
-        showFormStatus("Recebemos sua solicitação localmente, mas o CRM ainda não está configurado. Para atendimento imediato, fale com um consultor pelo WhatsApp.");
-      }
-    } else {
-      showFormStatus("Simulação recebida! Para atendimento imediato, fale com um consultor pelo WhatsApp.");
+    try {
+      const response = await fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error("Erro no envio");
+      feedback.textContent = "Solicitação enviada com sucesso. Em breve um consultor entrará em contato.";
+      form.reset();
+    } catch (error) {
+      feedback.textContent = "Não foi possível enviar agora. Clique no WhatsApp para falar com um consultor.";
     }
-
-    button.textContent = "Simulação recebida!";
-    form.reset();
-
-    setTimeout(() => {
-      button.disabled = false;
-      button.textContent = originalText;
-    }, 3000);
   });
 }
