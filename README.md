@@ -1,37 +1,92 @@
 # CredDrive Landing Page
 
-Landing page principal da CredDrive para captação de leads de Empréstimo com Garantia de Veículo.
+Landing page estática, responsiva e mobile-first para a CredDrive, focada em empréstimo com garantia de veículo.
 
-## Arquivos
+## Arquivos principais
 
-- `index.html`: página principal completa com Hero, Quem Somos, Benefícios, Como Funciona, Formulário, Blog interno, FAQ, Rodapé e WhatsApp.
-- `style.css`: identidade visual verde, responsiva e mobile-first.
-- `script.js`: WhatsApp, formulário, eventos de rastreamento e constantes de configuração.
-- `politica-de-privacidade.html`: página de privacidade e LGPD.
-- `package.json` e `package-lock.json`: scripts npm.
+- `index.html`
+- `style.css`
+- `script.js`
+- `politica-de-privacidade.html`
+- `package.json`
+- `package-lock.json`
+- `README.md`
 
-O Blog está dentro do `index.html`, na seção `id="blog"`. O arquivo `blog.html` não faz parte do pacote final.
+## Como visualizar localmente
 
-## Rodar localmente
+Instale o Node.js LTS em https://nodejs.org.
+
+Depois, dentro da pasta do projeto, execute:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Acesse `http://localhost:4173`.
+Abra no navegador:
 
-## Configurações
+```text
+http://localhost:4173
+```
 
-No `script.js`:
+## Como publicar no GitHub Pages
 
-- `WHATSAPP_NUMBER`: número do WhatsApp em formato internacional. Atual: `5531983318101`.
-- `WEBHOOK_URL`: inserir URL futura do webhook/CRM.
+1. Acesse o repositório no GitHub.
+2. Vá em **Configurações > Páginas**.
+3. Em **Fonte**, escolha **Implantar a partir de uma branch**.
+4. Selecione a branch `principal` e a pasta `/` ou `/root`.
+5. Clique em **Salvar**.
 
-No `index.html`:
+## Configurar WhatsApp
 
-- Inserir scripts oficiais de Google Tag Manager e Meta Pixel nos placeholders indicados.
+No arquivo `script.js`, altere:
 
-## Futuras integrações tecnológicas
+```js
+const WHATSAPP_NUMBER = "5500000000000";
+```
 
-Integrações com APIs de bancos, higienização de base, digitação automatizada, esteiras de crédito, CRM e parceiros devem ser feitas por backend seguro. Nunca exponha tokens, senhas ou chaves de API no JavaScript público da landing page.
+Use o formato internacional, sem espaços, traços ou parênteses:
+
+```text
+55 + DDD + número
+```
+
+Exemplo:
+
+```js
+const WHATSAPP_NUMBER = "5531999999999";
+```
+
+## Configurar webhook/CRM
+
+No arquivo `script.js`, altere:
+
+```js
+const WEBHOOK_URL = "";
+```
+
+Informe a URL do webhook do CRM, Make, Zapier, RD Station ou sistema próprio.
+
+Enquanto o `WEBHOOK_URL` estiver vazio, o formulário exibirá mensagem de sucesso local e orientará o usuário a falar pelo WhatsApp.
+
+## Inserir Google Tag Manager e Meta Pixel
+
+No arquivo `index.html`, substitua os comentários de placeholder pelos scripts oficiais:
+
+- Google Tag Manager;
+- Meta Pixel;
+- eventos adicionais de conversão.
+
+O arquivo `script.js` já envia eventos preparados para:
+
+- clique no CTA principal;
+- clique no WhatsApp;
+- envio do formulário.
+
+## Observação jurídica
+
+A página `politica-de-privacidade.html` contém texto simples para captação de leads. Antes de campanhas em tráfego pago, recomenda-se revisar juridicamente e incluir CNPJ, razão social, canal de privacidade e dados oficiais da CredDrive.
+
+## Observação comercial
+
+Operações sujeitas à análise de crédito e às condições da instituição parceira.
